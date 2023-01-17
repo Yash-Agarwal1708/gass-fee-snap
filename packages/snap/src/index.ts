@@ -39,7 +39,7 @@ switch (request.method) {
             prompt: "hello",
             description:
               'Current gas fees from api.coincap.io:',
-            textAreaContent:price.entries()
+            textAreaContent:`${price}`
               
               // `${Id}:${priceBTC}`
           }
