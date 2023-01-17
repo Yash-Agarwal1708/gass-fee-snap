@@ -1,41 +1,52 @@
 import { OnRpcRequestHandler } from '@metamask/snap-types';
 
-/**
- * Get a message from the origin. For demonstration purposes only.
- *
- * @param originString - The origin string.
- * @returns A message based on the origin.
- */
-export const getMessage = (originString: string): string =>
-  `Hello, ${originString}!`;
+async function getPrices() {
+    const response = await fetch('https://api.coincap.io/v2/assets'); 
+    return response.text(); 
+    }
+module.exports.onRpcRequest = async ({ origin, request }) => {
 
-/**
- * Handle incoming JSON-RPC requests, sent through `wallet_invokeSnap`.
- *
- * @param args - The request handler args as object.
- * @param args.origin - The origin of the request, e.g., the website that
- * invoked the snap.
- * @param args.request - A validated JSON-RPC request object.
- * @returns `null` if the request succeeded.
- * @throws If the request method is not valid for this snap.
- * @throws If the `snap_confirm` call failed.
- */
-export const onRpcRequest: OnRpcRequestHandler = ({ origin, request }) => {
-  switch (request.method) {
-    case 'hello':
-      return wallet.request({
-        method: 'snap_confirm',
-        params: [
-          {
-            prompt: getMessage(origin),
-            description:
-              'This custom confirmation is just for display purposes.',
-            textAreaContent:
-              'But you can edit the snap source code to make it do something, if you want to!',
-          },
-        ],
-      });
-    default:
-      throw new Error('Method not found.');
-  }
-};
+    let state = await wallet.request({
+      method: 'snap_manageState',
+      params: ['get'],
+    });
+  
+    // if (!state) {
+    //   state = {book:[]}; 
+    //   // initialize state if empty and set default data
+    //   await wallet.request({
+    //     method: 'snap_manageState',
+    //     params: ['update', state],
+    //   });
+    // }
+  
+    switch (request.method) { 
+      case 'hello':
+        return getPrices().then(prices => {
+        const pricesObject = JSON.parse(prices); 
+        let price = new Map();
+        for(let i=0;i<10;i++)
+        {
+        const priceBTC = pricesObject.data[i].priceUsd;
+        const Id= pricesObject.data[i].id;
+        price.set(Id,priceBTC)
+        //price.set[Id] =priceBTC;
+      }
+        let price_book = state.book.map(function(item){
+            return `${item.name}: ${item.address}`; 
+          }).join("\n"); 
+        return wallet.request({
+          method: 'snap_confirm',
+          params: [
+            {
+              prompt: `Hello, ${origin}!`,
+              description: 'Address book:',
+              textAreaContent: address_book,
+            },
+          ],
+        });
+    }); 
+      default:
+        throw new Error('Method not found.');
+    }
+}
